@@ -162,17 +162,17 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeY(self):
         try:
             while int(self.ui.y1.value()) == 1:
-                self.move(0,0,-1)
+                self.move(0,1,0)
             while int(self.ui.y1.value()) == -1:
-                self.move(0,0,1)
+                self.move(0,-1,0)
         except:
             print("錯誤")
     def changeX(self):
         try:
             while int(self.ui.x1.value()) == 1:
-                self.move(0,0,-1)
+                self.move(1,0,0)
             while int(self.ui.x1.value()) == -1:
-                self.move(0,0,1)
+                self.move(-1,0,0)
         except:
             print("錯誤")   
     def changeZ(self):
