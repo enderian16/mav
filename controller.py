@@ -1,5 +1,5 @@
 import time
-#import keyboard
+import keyboard
 from pymavlink import mavutil
 from PyQt5 import QtWidgets, QtGui, QtCore
 from UI import Ui_MainWindow
@@ -79,7 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # 向飛機發送起飛指令，目標高度為50
         print("起飛")
         the_connection.mav.command_long_send(the_connection.target_system, the_connection.target_component,
-                                     mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 50)
+                                     mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 20)
         msg = self.the_connection.recv_match(type='COMMAND_ACK', blocking=True)
         print(msg)
 
@@ -118,6 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
             4,  # GUIDED mode
             0, 0, 0, 0, 0  # unused parameters
         )        
+        time.sleep(1)
         the_connection.mav.command_long_send(
             the_connection.target_system,
             the_connection.target_component,
@@ -126,6 +127,7 @@ class MainWindow(QtWidgets.QMainWindow):
             0, 0, 0, 0, 0, 0
         )
         msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
+        print(msg)
 
     def rtl(self):
         print("返航")
@@ -147,24 +149,20 @@ class MainWindow(QtWidgets.QMainWindow):
     def changeY(self):
         while int(self.ui.y1.value()) == 1:
             self.move(0,5,0)
-            time.sleep(10)
         while int(self.ui.y1.value()) == -1:
             self.move(0,-5,0)
-            time.sleep(10)
     def changeX(self):
         while int(self.ui.x1.value()) == 1:
             self.move(5,0,0)
-            time.sleep(10)
         while int(self.ui.x1.value()) == -1:
-            self.move(-5,0,0)
-            time.sleep(10)       
+            self.move(-5,0,0)      
     def changeZ(self):
-        while int(self.ui.z1.value()) == 1:
+        if int(self.ui.z1.value()) == 1:
             self.move(0,0,-1)
-            time.sleep(10)
-        while int(self.ui.z1.value()) == -1:
+        elif int(self.ui.z1.value()) == -1:
             self.move(0,0,1)
-            time.sleep(10)
+        else:
+            self.move(0,0,0)
     def move(self,x,y,z):
         the_connection= self.the_connection
         the_connection.mav.set_position_target_local_ned_send(
@@ -172,12 +170,11 @@ class MainWindow(QtWidgets.QMainWindow):
             the_connection.target_system,  # target system
             the_connection.target_component,  # target component
             mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
-            0b0000111111111000,  # type_mask (only positions enabled)
+            0b0001111111111000,  # type_mask (only positions enabled)
             x, y, z,  # x, y, z positions
             0, 0, 0,  # x, y, z velocity in m/s (not used)
             0, 0, 0,  # x, y, z acceleration (not used)
             0, 0  # yaw, yaw_rate (not used)
         )
         print(x,y,z)
-                            
         
