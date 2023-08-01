@@ -1,0 +1,17 @@
+dronekit==2.9.2
+dronekit-sitl==3.3.0
+future==0.18.3
+keyboard==0.13.5
+lxml==4.9.2
+MAVProxy==1.8.59
+monotonic==1.6
+numpy==1.24.2
+prompt-toolkit==3.0.38
+psutil==5.9.5
+pymavlink==2.4.39
+PyQt5==5.15.9
+PyQt5-Qt5==5.15.2
+PyQt5-sip==12.12.1
+pyserial==3.5
+six==1.16.0
+wcwidth==0.2.6
