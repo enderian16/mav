@@ -1,9 +1,11 @@
 import time
+import typing
 import keyboard
 from pymavlink import mavutil
 from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from UI import Ui_MainWindow
-
+import threading
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -29,7 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
         # 開始一個監聽UDP埠的連線
             the_connection = mavutil.mavlink_connection('udpin:localhost:14550')
-            self.the_connection = the_connection
+            self.the_connection = the_connection 
         # 等待第一個心跳訊息
         # 這會設定鏈路的遠端系統及元件的ID
             the_connection.wait_heartbeat()
@@ -161,43 +163,106 @@ class MainWindow(QtWidgets.QMainWindow):
             print("錯誤")         
     def changeY(self):
         try:
-            while int(self.ui.y1.value()) == 1:
-                self.move(0,1,0)
-            while int(self.ui.y1.value()) == -1:
-                self.move(0,-1,0)
+            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+            self.slider_thread.connectionup(self.the_connection)
+            self.slider_thread.start()
         except:
-            print("錯誤")
+            print("錯誤Y")
     def changeX(self):
         try:
-            while int(self.ui.x1.value()) == 1:
-                self.move(1,0,0)
-            while int(self.ui.x1.value()) == -1:
-                self.move(-1,0,0)
+            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+            self.slider_thread.connectionup(self.the_connection)
+            self.slider_thread.start()
         except:
-            print("錯誤")   
+            print("錯誤X")   
     def changeZ(self):
         try:
-            while int(self.ui.z1.value()) == 1:
-                self.move(0,0,-1)
-            while int(self.ui.z1.value()) == -1:
-                self.move(0,0,1)
+            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+            self.slider_thread.connectionup(self.the_connection)            
+            self.slider_thread.start()
         except:
-            print("錯誤")
-    def move(self,x,y,z):
-        try:
-            the_connection= self.the_connection
-            the_connection.mav.set_position_target_local_ned_send(
-                0,  # time_boot_ms (not used)
-                the_connection.target_system,  # target system
-                the_connection.target_component,  # target component
-                mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
-                0b0001111111111000,  # type_mask (only positions enabled)
-                x, y, z,  # x, y, z positions
-                0, 0, 0,  # x, y, z velocity in m/s (not used)
-                0, 0, 0,  # x, y, z acceleration (not used)
-                0, 0  # yaw, yaw_rate (not used)
-            )
-            print(x,y,z)
-        except:
-            print("錯誤")
+            print("錯誤Z")
+    def get_slider_valueY(self):
+        return int(self.ui.x1.value()),int(self.ui.y1.value()),int(self.ui.z1.value())
         
+class SliderReaderThread(threading.Thread):
+    def __init__(self, get_value_func):
+        threading.Thread.__init__(self)
+        self.get_value_func = get_value_func
+
+    def run(self):
+        x,y,z = 0,0,0
+        while True:
+            x,y,z = self.get_value_func()
+            time.sleep(1)
+            self.move(x,y,z)
+            if x==y==z==0:
+                break
+    def connectionup(self,connection):
+        self.connection = connection
+        print(self.connection)
+        
+    def move(self,x,y,z):
+        print(self.connection)
+        print(x,y,z)
+        try:
+            the_connection= self.connectionn
+            the_connection.mav.set_position_target_local_ned_send(
+                    0,  # time_boot_ms (not used)
+                    the_connection.target_system,  # target system
+                    the_connection.target_component,  # target component
+                    mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
+                    0b0001111111111000,  # type_mask (only positions enabled)
+                    x, y, z,  # x, y, z positions
+                    0, 0, 0,  # x, y, z velocity in m/s (not used)
+                    0, 0, 0,  # x, y, z acceleration (not used)
+                    0, 0  # yaw, yaw_rate (not used)
+                )
+        except:
+            print("錯誤飛行")
+
+
+
+'''
+class ThreadTask(QThread):
+    print('控制飛行')
+    def run(self,connection):
+        self.connection = connection
+        print(connection)
+        print(self.connection)
+    def startY(self,value):
+        while value == 1:
+            self.move(0,1,0)
+            time.sleep(1)
+            if value == 0:
+                break
+        while value == -1:
+            self.move(0,-1,0)
+            time.sleep(-1)
+            if value ==0:
+                break
+            #self.move(0,0,0)       
+    def move(self,x,y,z):
+        #print(self.connection)
+        #print(x,y,z)
+        try:
+            
+            the_connection= self.connectionn
+            the_connection.mav.set_position_target_local_ned_send(
+                    0,  # time_boot_ms (not used)
+                    the_connection.target_system,  # target system
+                    the_connection.target_component,  # target component
+                    mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
+                    0b0001111111111000,  # type_mask (only positions enabled)
+                    x, y, z,  # x, y, z positions
+                    0, 0, 0,  # x, y, z velocity in m/s (not used)
+                    0, 0, 0,  # x, y, z acceleration (not used)
+                    0, 0  # yaw, yaw_rate (not used)
+                )
+            print(x,y,z)
+            
+                #if x and y and z ==0:
+                    #break
+        except:
+            print("錯誤")
+'''
