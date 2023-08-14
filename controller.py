@@ -32,7 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def link(self):
         try:
         # 開始一個監聽UDP埠的連線
-            the_connection = mavutil.mavlink_connection('udpin:localhost:14550')
+            the_connection = mavutil.mavlink_connection('udpin:127.0.0.1:14550')
             self.the_connection = the_connection 
         # 等待第一個心跳訊息
         # 這會設定鏈路的遠端系統及元件的ID
@@ -211,14 +211,14 @@ class SliderReaderThread(threading.Thread):
         print(self.connection)
         print(x,y,z)
         try:
-            the_connection= self.connectionn
+            the_connection= self.connection
             the_connection.mav.set_position_target_local_ned_send(
                     0,  # time_boot_ms (not used)
                     the_connection.target_system,  # target system
                     the_connection.target_component,  # target component
                     mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
                     0b0001111111111000,  # type_mask (only positions enabled)
-                    x, y, z,  # x, y, z positions
+                    x, y, -z,  # x, y, z positions
                     0, 0, 0,  # x, y, z velocity in m/s (not used)
                     0, 0, 0,  # x, y, z acceleration (not used)
                     0, 0  # yaw, yaw_rate (not used)
