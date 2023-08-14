@@ -1,5 +1,7 @@
+from collections.abc import Callable, Iterable, Mapping
 import time
 import typing
+from typing import Any
 import keyboard
 from pymavlink import mavutil
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -163,23 +165,26 @@ class MainWindow(QtWidgets.QMainWindow):
             print("錯誤")         
     def changeY(self):
         try:
-            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
-            self.slider_thread.connectionup(self.the_connection)
-            self.slider_thread.start()
+            if self.ui.x1.value() or self.ui.z1.value() == 0:
+                self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+                self.slider_thread.connectionup(self.the_connection)            
+                self.slider_thread.start()
         except:
             print("錯誤Y")
     def changeX(self):
         try:
-            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
-            self.slider_thread.connectionup(self.the_connection)
-            self.slider_thread.start()
+            if self.ui.z1.value() or self.ui.y1.value() == 0:
+                self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+                self.slider_thread.connectionup(self.the_connection)            
+                self.slider_thread.start()
         except:
             print("錯誤X")   
     def changeZ(self):
         try:
-            self.slider_thread = SliderReaderThread(self.get_slider_valueY)
-            self.slider_thread.connectionup(self.the_connection)            
-            self.slider_thread.start()
+            if self.ui.x1.value() or self.ui.y1.value() == 0:
+                self.slider_thread = SliderReaderThread(self.get_slider_valueY)
+                self.slider_thread.connectionup(self.the_connection)            
+                self.slider_thread.start()
         except:
             print("錯誤Z")
     def get_slider_valueY(self):
@@ -200,7 +205,7 @@ class SliderReaderThread(threading.Thread):
                 break
     def connectionup(self,connection):
         self.connection = connection
-        print(self.connection)
+        #print(self.connection)
         
     def move(self,x,y,z):
         print(self.connection)
