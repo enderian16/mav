@@ -9,7 +9,6 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from UI import Ui_MainWindow
 import threading
 
-
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         # in python3, super(Class, self).xxx = super().xxx
@@ -30,16 +29,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.z1.valueChanged.connect(self.changeZ)
            
     def link(self):
-        try:
+        try: 
         # 開始一個監聽UDP埠的連線
             the_connection = mavutil.mavlink_connection('udpin:127.0.0.1:14550')
-            self.the_connection = the_connection 
+            timeout_seconds = 5
+            self.the_connection = the_connection
         # 等待第一個心跳訊息
         # 這會設定鏈路的遠端系統及元件的ID
-            the_connection.wait_heartbeat()
+            the_connection.wait_heartbeat(timeout=timeout_seconds)
+            if mavutil.mavlink.MAVConnectionError:
+                return
         # 向飛機發送解鎖指令
             the_connection.mav.command_long_send(the_connection.target_system, the_connection.target_component,
-                                     mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
+                                    mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
         # 等待指令確認訊息
             print("等待指令確認訊息")
             msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
@@ -58,15 +60,19 @@ class MainWindow(QtWidgets.QMainWindow):
             msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
             print(msg)
         #print(self.the_connection)
+            self.qthread=data_threading()
+            self.qthread.connectiondata(self.the_connection,self.ui)     
+            self.qthread.start()
+            self.qthread.data_hight.connect(self.get_data_hight) 
         except:
-            print("錯誤")
+            print("接收錯誤")
+
+    def get_data_hight(self,hight):
+        self.ui.hight.setText("目前高度%s公尺"%hight)
 
     def takeoff(self):
         try:
-            # 向飛機再次發送解鎖指令
-            #print(self.the_connection)
             the_connection= self.the_connection
-            #print(the_connection)
             the_connection.mav.command_long_send(
                 the_connection.target_system,
                 the_connection.target_component,
@@ -79,27 +85,18 @@ class MainWindow(QtWidgets.QMainWindow):
             print("解鎖")
             the_connection.mav.command_long_send(the_connection.target_system, the_connection.target_component,
                                      mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
-
-            msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
-            print(msg)
-
+            #msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
+            #print(msg)
             time.sleep(1)
-            # 向飛機發送起飛指令，目標高度為50
             print("起飛")
             the_connection.mav.command_long_send(the_connection.target_system, the_connection.target_component,
                                      mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 20)
-            msg = self.the_connection.recv_match(type='COMMAND_ACK', blocking=True)
-            print(msg)
-
-            time.sleep(10)
-            print("從系統接收到的心跳訊息 (系統 %u 元件 %u)" %
-            (the_connection.target_system, the_connection.target_component))
         except:
-            print("錯誤")
+            print("起飛錯誤")
     def returnland(self):
         try:
-            print("降落")
             the_connection= self.the_connection
+            print("降落")
             #print(the_connection)
             the_connection.mav.command_long_send(
                 the_connection.target_system,
@@ -115,11 +112,11 @@ class MainWindow(QtWidgets.QMainWindow):
             msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
             print(msg)   
         except:
-            print("錯誤")
+            print("降落錯誤")
     def keephight(self):
         try:
-            print("高度保持")
             the_connection= self.the_connection
+            print("高度保持")
             #print(the_connection)
             the_connection.mav.command_long_send(
                 the_connection.target_system,
@@ -141,12 +138,12 @@ class MainWindow(QtWidgets.QMainWindow):
             msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
             print(msg)
         except:
-            print("錯誤")
+            print("高度保持錯誤")
 
     def rtl(self):
         try:
-            print("返航")
             the_connection= self.the_connection
+            print("返航")
             #print(the_connection)
             the_connection.mav.command_long_send(
                 the_connection.target_system,
@@ -162,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow):
             msg = the_connection.recv_match(type='COMMAND_ACK', blocking=True)
             print(msg)
         except:
-            print("錯誤")         
+            print("返航錯誤")         
     def changeY(self):
         try:
             if self.ui.x1.value() or self.ui.z1.value() == 0:
@@ -189,7 +186,9 @@ class MainWindow(QtWidgets.QMainWindow):
             print("錯誤Z")
     def get_slider_valueY(self):
         return int(self.ui.x1.value()),int(self.ui.y1.value()),int(self.ui.z1.value())
-        
+    def get_hight(self,hight):
+        self.ui.hight.setText(str(hight))
+
 class SliderReaderThread(threading.Thread):
     def __init__(self, get_value_func):
         threading.Thread.__init__(self)
@@ -226,48 +225,23 @@ class SliderReaderThread(threading.Thread):
         except:
             print("錯誤飛行")
 
+class data_threading(QObject,threading.Thread):
+    data_hight = pyqtSignal(str)
+    def __init__(self):
+        threading.Thread.__init__(self)
+        super(data_threading, self).__init__()
 
-
-'''
-class ThreadTask(QThread):
-    print('控制飛行')
-    def run(self,connection):
+    def connectiondata(self,connection,ui):
         self.connection = connection
-        print(connection)
-        print(self.connection)
-    def startY(self,value):
-        while value == 1:
-            self.move(0,1,0)
-            time.sleep(1)
-            if value == 0:
-                break
-        while value == -1:
-            self.move(0,-1,0)
-            time.sleep(-1)
-            if value ==0:
-                break
-            #self.move(0,0,0)       
-    def move(self,x,y,z):
-        #print(self.connection)
-        #print(x,y,z)
-        try:
-            
-            the_connection= self.connectionn
-            the_connection.mav.set_position_target_local_ned_send(
-                    0,  # time_boot_ms (not used)
-                    the_connection.target_system,  # target system
-                    the_connection.target_component,  # target component
-                    mavutil.mavlink.MAV_FRAME_LOCAL_OFFSET_NED,  # frame
-                    0b0001111111111000,  # type_mask (only positions enabled)
-                    x, y, z,  # x, y, z positions
-                    0, 0, 0,  # x, y, z velocity in m/s (not used)
-                    0, 0, 0,  # x, y, z acceleration (not used)
-                    0, 0  # yaw, yaw_rate (not used)
-                )
-            print(x,y,z)
-            
-                #if x and y and z ==0:
-                    #break
-        except:
-            print("錯誤")
-'''
+        self.ui = ui
+
+    def run(self):
+        while True:
+            try:    
+                the_connection= self.connection
+                msg = the_connection.recv_match(type='GLOBAL_POSITION_INT', blocking=True)
+                #print("目前的高度： %s" % msg.relative_alt)
+                self.data_hight.emit(str(msg.relative_alt/1000))
+                time.sleep(0.1)
+            except:
+                print("擷取錯誤")
