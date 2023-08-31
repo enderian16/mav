@@ -35,10 +35,8 @@ class MainWindow(QtWidgets.QMainWindow):
             timeout_seconds = 5
             self.the_connection = the_connection
         # 等待第一個心跳訊息
-        # 這會設定鏈路的遠端系統及元件的ID
+        # 這會設定鏈路的遠端系統及元件的ID    
             the_connection.wait_heartbeat(timeout=timeout_seconds)
-            if mavutil.mavlink.MAVConnectionError:
-                return
         # 向飛機發送解鎖指令
             the_connection.mav.command_long_send(the_connection.target_system, the_connection.target_component,
                                     mavutil.mavlink.MAV_CMD_COMPONENT_ARM_DISARM, 0, 1, 0, 0, 0, 0, 0, 0)
